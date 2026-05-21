@@ -1,26 +1,24 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+    --font-inter: var(--font-inter);
+    --color-off-white: #F8F8F8;
+    --color-primary-100: #E1EFFE;
+    --color-primary-600: #1C64F2;
+    --color-primary-700: #1A56DB;
+    --color-primary-800: #1E429F;
+    --color-gray-650: #4A5565;
+    --color-brand: #1447E6;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@utility shadow-card {
+  box-shadow: 0 1px 2px -1px rgba(0,0,0,0.1), 0 1px 3px 0 rgba(0,0,0,0.1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@utility shadow-input {
+  box-shadow: 0 1px 1px 0px rgba(29, 41, 61, 0.02);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@utility shadow-tooltip {
+  box-shadow: 0 1px 2px 0px rgba(0, 0, 0, 0.08);
 }
