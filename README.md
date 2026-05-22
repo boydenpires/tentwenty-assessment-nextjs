@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ticktock Timesheet
+
+Introducing ticktock, our cutting-edge timesheet web application designed to revolutionize how you manage employee work hours. With ticktock, you can effortlessly track and monitor employee attendance and productivity from anywhere, anytime, using any internet-connected device.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and you'll land on the login page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Demo login:**
+- Email: `boyden@ticktock.com`
+- Password: `password123`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+- **Next.js 16** (App Router) + **React 19**
+- **TypeScript 5**
+- **Tailwind CSS v4** (via `@tailwindcss/postcss`)
+- **JOSE** — JWT session signing
+- **clsx** — conditional class names
+- **ESLint 9** + `eslint-config-next`
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `npm run dev` — start the dev server
+- `npm run build` — production build
+- `npm start` — run the production build
+- `npm run lint` — ESLint check
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Features
 
-## Deploy on Vercel
+- **Auth** — session cookies signed with JOSE, route protection via `proxy.ts`
+- **Weekly timesheets** — navigate weeks via `/timesheet/[weekId]`
+- **Task CRUD** — add, edit, and delete time entries through a modal form
+- **Projects & work types** — pick from preset projects and task categories
+- **Progress bar** — visual hours-per-week tracker with status badge
+- **Filters, sort & pagination** 
+- **Responsive UI**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## How to Test (Manual)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Login flow** — visit `/`, get redirected to `/login`, sign in with the above creds.
+2. **Create a task** — open any week, hit **Add new task**, fill in all the required fields and save.
+3. **Edit & delete** — use the row action menu to modify or remove a task.
+4. **Week navigation** — jump between weeks and verify entries persist per `weekId`.
+5. **Filters & paging** — try sorting, filtering, and changing page size on the timesheet list.
+6. **Auth guard** — log out and try hitting `/timesheet` directly; you should bounce to `/login`.
+
+## Project Layout
+
+```
+app/
+├── api/           # Route handlers (auth, timesheets)
+├── components/    # UI building blocks
+├── lib/           # Session, users, timesheet helpers, constants
+├── login/         # Login page
+└── timesheet/     # Timesheet pages
+proxy.ts           # Request proxy (Next 16)
+```
+
+
