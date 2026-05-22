@@ -64,3 +64,9 @@ app/
 proxy.ts           # Request proxy (Next 16)
 ```
 
+## Notes
+
+Due to the limited assessment timeline, I prioritized the core functionality of the app. Some features such as the date range filter and the hoverable hours tooltip in the week details view are currently missing.
+
+I’ve also included a few TODOs for code refactor and identified some areas where additional performance optimizations can be made.
+
