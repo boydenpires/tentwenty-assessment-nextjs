@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { Redis } from '@upstash/redis'
+
 import { STATUS, type Status } from '@/app/types'
 
 export type { Status }
@@ -25,10 +27,13 @@ export interface TimesheetWeek {
   days: TimesheetDay[]
 }
 
+type WeekStore = Record<string, Task[]>
+
 const TOTAL_HOURS_PER_WEEK = 40
 
-// In-memory store: weekId -> Map<date, Task[]>
-const store = new Map<string, Map<string, Task[]>>()
+const redis = Redis.fromEnv()
+
+const weekKey = (weekId: string) => `week:${weekId}`
 
 function toISODate(date: Date): string {
   const y = date.getFullYear()
@@ -54,34 +59,30 @@ function getCurrentWeekMonday(): Date {
   return monday
 }
 
-export function generateWeeks(year: number): TimesheetWeek[] {
+function buildWeekSkeletons(year: number): Array<Omit<TimesheetWeek, 'days'> & { dates: string[] }> {
   const firstMonday = getFirstMondayOfYear(year)
   const currentMonday = getCurrentWeekMonday()
-  const weeks: TimesheetWeek[] = []
+  const skeletons: Array<Omit<TimesheetWeek, 'days'> & { dates: string[] }> = []
   let weekNum = 1
   let monday = new Date(firstMonday)
 
   while (monday <= currentMonday && monday.getFullYear() <= year) {
     const weekId = `${year}-W${String(weekNum).padStart(2, '0')}`
-    const weekStore = store.get(weekId)
-    const days: TimesheetDay[] = []
-
+    const dates: string[] = []
     for (let d = 0; d < 5; d++) {
       const dayDate = new Date(monday)
       dayDate.setDate(monday.getDate() + d)
-      const dateStr = toISODate(dayDate)
-      days.push({ date: dateStr, tasks: weekStore?.get(dateStr) ?? [] })
+      dates.push(toISODate(dayDate))
     }
-
     const friday = new Date(monday)
     friday.setDate(monday.getDate() + 4)
 
-    weeks.push({
+    skeletons.push({
       weekId,
       weekNum,
       startDate: toISODate(monday),
       endDate: toISODate(friday),
-      days,
+      dates,
     })
 
     weekNum++
@@ -89,15 +90,45 @@ export function generateWeeks(year: number): TimesheetWeek[] {
     monday.setDate(monday.getDate() + 7)
   }
 
-  return weeks
+  return skeletons
 }
 
-export function getWeekById(weekId: string): TimesheetWeek | null {
+export async function generateWeeks(year: number): Promise<TimesheetWeek[]> {
+  const skeletons = buildWeekSkeletons(year)
+  if (skeletons.length === 0) return []
+
+  const keys = skeletons.map((s) => weekKey(s.weekId))
+  const stored = await redis.mget<(WeekStore | null)[]>(...keys)
+
+  return skeletons.map((s, i) => {
+    const weekStore = stored[i] ?? {}
+    return {
+      weekId: s.weekId,
+      weekNum: s.weekNum,
+      startDate: s.startDate,
+      endDate: s.endDate,
+      days: s.dates.map((date) => ({ date, tasks: weekStore[date] ?? [] })),
+    }
+  })
+}
+
+export async function getWeekById(weekId: string): Promise<TimesheetWeek | null> {
   const [yearStr] = weekId.split('-W')
   const year = parseInt(yearStr, 10)
   if (isNaN(year)) return null
   if (year !== new Date().getFullYear()) return null
-  return generateWeeks(year).find((w) => w.weekId === weekId) ?? null
+
+  const skeleton = buildWeekSkeletons(year).find((s) => s.weekId === weekId)
+  if (!skeleton) return null
+
+  const weekStore = (await redis.get<WeekStore>(weekKey(weekId))) ?? {}
+  return {
+    weekId: skeleton.weekId,
+    weekNum: skeleton.weekNum,
+    startDate: skeleton.startDate,
+    endDate: skeleton.endDate,
+    days: skeleton.dates.map((date) => ({ date, tasks: weekStore[date] ?? [] })),
+  }
 }
 
 export function computeWeekStats(week: TimesheetWeek) {
@@ -120,8 +151,8 @@ export function getWeekStatus(loggedHours: number, taskCount: number): Status {
 
 export function isCurrentWeek(weekId: string): boolean {
   const year = new Date().getFullYear()
-  const weeks = generateWeeks(year)
-  return weeks[weeks.length - 1]?.weekId === weekId
+  const skeletons = buildWeekSkeletons(year)
+  return skeletons[skeletons.length - 1]?.weekId === weekId
 }
 
 export function formatDateRange(startDate: string, endDate: string): string {
@@ -143,39 +174,50 @@ export function formatDayLabel(date: string): string {
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function addTask(weekId: string, date: string, task: Omit<Task, 'id'>): Task {
-  if (!store.has(weekId)) store.set(weekId, new Map())
-  const weekStore = store.get(weekId)!
-  if (!weekStore.has(date)) weekStore.set(date, [])
+export async function addTask(
+  weekId: string,
+  date: string,
+  task: Omit<Task, 'id'>,
+): Promise<Task> {
+  const key = weekKey(weekId)
+  const weekStore = (await redis.get<WeekStore>(key)) ?? {}
   const newTask: Task = { ...task, id: crypto.randomUUID() }
-  weekStore.get(date)!.push(newTask)
+  weekStore[date] = [...(weekStore[date] ?? []), newTask]
+  await redis.set(key, weekStore)
   return newTask
 }
 
-export function updateTask(
+export async function updateTask(
   weekId: string,
   taskId: string,
-  updates: Partial<Omit<Task, 'id'>>
-): Task | null {
-  const weekStore = store.get(weekId)
+  updates: Partial<Omit<Task, 'id'>>,
+): Promise<Task | null> {
+  const key = weekKey(weekId)
+  const weekStore = await redis.get<WeekStore>(key)
   if (!weekStore) return null
-  for (const tasks of weekStore.values()) {
+  for (const date of Object.keys(weekStore)) {
+    const tasks = weekStore[date]
     const idx = tasks.findIndex((t) => t.id === taskId)
     if (idx !== -1) {
       tasks[idx] = { ...tasks[idx], ...updates }
+      await redis.set(key, weekStore)
       return tasks[idx]
     }
   }
   return null
 }
 
-export function deleteTask(weekId: string, taskId: string): boolean {
-  const weekStore = store.get(weekId)
+export async function deleteTask(weekId: string, taskId: string): Promise<boolean> {
+  const key = weekKey(weekId)
+  const weekStore = await redis.get<WeekStore>(key)
   if (!weekStore) return false
-  for (const tasks of weekStore.values()) {
+  for (const date of Object.keys(weekStore)) {
+    const tasks = weekStore[date]
     const idx = tasks.findIndex((t) => t.id === taskId)
     if (idx !== -1) {
       tasks.splice(idx, 1)
+      if (tasks.length === 0) delete weekStore[date]
+      await redis.set(key, weekStore)
       return true
     }
   }

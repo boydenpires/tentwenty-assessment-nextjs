@@ -118,7 +118,7 @@ export default function ModalAddEntry({
             name="project"
             value={project}
             onChange={(e) => setProject(e.target.value)}
-            className="w-full text-sm text-gray-500 border border-gray-200 rounded-lg px-3 py-2.5 bg-white shadow-input focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white shadow-input focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Project Name</option>
             {projects.map((p) => (

@@ -7,7 +7,7 @@ export async function POST(
 ) {
   const { weekId } = await params
 
-  if (!getWeekById(weekId)) {
+  if (!(await getWeekById(weekId))) {
     return NextResponse.json({ error: 'Week not found' }, { status: 404 })
   }
 
@@ -18,7 +18,7 @@ export async function POST(
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
-  const task = addTask(weekId, date, {
+  const task = await addTask(weekId, date, {
     description,
     hours: Number(hours),
     projectName,

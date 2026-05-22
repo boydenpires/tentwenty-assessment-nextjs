@@ -13,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ weekId: string }> }
 ) {
   const { weekId } = await params
-  const week = getWeekById(weekId)
+  const week = await getWeekById(weekId)
 
   if (!week) {
     return NextResponse.json({ error: 'Week not found' }, { status: 404 })

@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   const { weekId, taskId } = await params
   const body = await req.json()
-  const task = updateTask(weekId, taskId, body)
+  const task = await updateTask(weekId, taskId, body)
 
   if (!task) {
     return NextResponse.json({ error: 'Task not found' }, { status: 404 })
@@ -21,7 +21,7 @@ export async function DELETE(
   { params }: { params: Promise<{ weekId: string; taskId: string }> }
 ) {
   const { weekId, taskId } = await params
-  const deleted = deleteTask(weekId, taskId)
+  const deleted = await deleteTask(weekId, taskId)
 
   if (!deleted) {
     return NextResponse.json({ error: 'Task not found' }, { status: 404 })

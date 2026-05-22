@@ -33,7 +33,7 @@ export async function GET(req: Request) {
   )
 
   const year = new Date().getFullYear()
-  const all = generateWeeks(year).map((week) => {
+  const all = (await generateWeeks(year)).map((week) => {
     const { loggedHours, totalHours, taskCount } = computeWeekStats(week)
     return {
       weekId: week.weekId,

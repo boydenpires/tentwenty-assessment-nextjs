@@ -22,6 +22,7 @@ export default function TaskRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  // TODO disable task row whilst delete request is being processed
   return (
     <div className="w-full h-11 px-3 py-2.5 relative flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-lg">
       <span className="flex-1 min-w-0 truncate text-[16px] leading-[150%] font-medium text-gray-900">
