@@ -1,7 +1,7 @@
 "use client";
 
 import TaskRow from "./TaskRow";
-import type { Task } from "./TimesheetWeekClient";
+import type { Task } from "@/app/types";
 
 interface DaySectionProps {
   label: string;
@@ -34,7 +34,6 @@ export default function DaySection({
         {tasks.map((task) => (
           <TaskRow
             key={task.id}
-            id={task.id}
             description={task.description}
             hours={task.hours}
             projectName={task.projectName}

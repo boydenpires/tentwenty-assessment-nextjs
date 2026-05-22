@@ -5,7 +5,6 @@ import ProjectBadge from "@/app/components/timesheet/ProjectBadge";
 import Dropdown from "@/app/components/Dropdown";
 
 interface TaskRowProps {
-  id: string;
   description: string;
   hours: number;
   projectName: string;
@@ -14,7 +13,6 @@ interface TaskRowProps {
 }
 
 export default function TaskRow({
-  id: _id,
   description,
   hours,
   projectName,

@@ -24,6 +24,8 @@ export default function TimesheetWeekClient({
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const refetch = useCallback(async () => {
+    // TODO extract the fetch request into services/timesheet.ts
+    // TODO do the same across the app
     const res = await fetch(`/api/timesheets/${weekId}`);
     if (res.status === 404) {
       setNotFound(true);
@@ -37,6 +39,7 @@ export default function TimesheetWeekClient({
   }, [weekId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refetch();
   }, [refetch]);
 
